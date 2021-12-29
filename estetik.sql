@@ -1,0 +1,89 @@
+-- USAR BASE DE DATOS MASTER para trabajar
+USE master
+GO
+
+-- Verificación de la existencia
+IF DB_ID('estetik') IS NOT NULL
+BEGIN
+	USE MASTER
+	DROP DATABASE estetik
+END
+GO
+
+-- Creación de la Base de Datos (Archivo Principal, Secundario y de Log)
+CREATE DATABASE estetik
+ON PRIMARY
+(NAME = 'estetik.MDF',
+FILENAME = 'C:\Program Files\Microsoft SQL Server\MSSQL11.MSSQLSERVER\MSSQL\DATA\estetik.MDF',
+SIZE = 10MB,
+MAXSIZE = UNLIMITED,
+FILEGROWTH = 20%),
+
+(NAME = 'estetik.NDF',
+FILENAME = 'C:\Program Files\Microsoft SQL Server\MSSQL11.MSSQLSERVER\MSSQL\DATA\estetik.NDF',
+SIZE = 15MB,
+MAXSIZE = UNLIMITED,
+FILEGROWTH = 10%)
+
+LOG ON
+(NAME = 'estetik.LDF',
+FILENAME = 'C:\Program Files\Microsoft SQL Server\MSSQL11.MSSQLSERVER\MSSQL\DATA\estetik.LDF',
+SIZE = 5MB,
+MAXSIZE = UNLIMITED,
+FILEGROWTH = 5%)
+GO
+
+-- Uso de la base de datos para crear tablas
+USE estetik
+GO
+
+--CREAR TABLA CLIENTES
+CREATE TABLE clientes(
+id_cliente INT NOT NULL PRIMARY KEY IDENTITY(01,1),
+nombres NVARCHAR(MAX) NOT NULL,
+apellidos NVARCHAR(MAX) NOT NULL,
+direccion NVARCHAR(MAX) NOT NULL,
+telefono NVARCHAR(MAX) NOT NULL,
+estado NVARCHAR(MAX) NOT NULL DEFAULT('1')
+)
+
+--CREAR TABLA CITAS
+CREATE TABLE citas(
+id_cita INT NOT NULL PRIMARY KEY IDENTITY(01,1),
+fecha NVARCHAR(MAX) NOT NULL,
+hora NVARCHAR(MAX) NOT NULL,
+motivo NVARCHAR(MAX) NOT NULL,
+estado NVARCHAR(MAX) NOT NULL,
+id_cliente INT NOT NULL
+)
+
+-- CREAR TABLA INGRESOS
+CREATE TABLE ingresos(
+id_ingreso INT NOT NULL PRIMARY KEY IDENTITY(01,1),
+servicio NVARCHAR(MAX) NOT NULL,
+costo NVARCHAR(MAX) NOT NULL,
+estado NVARCHAR(MAX) NOT NULL,
+id_cliente INT NOT NULL
+)
+GO
+
+-- CREACION DE LA RELACIÓN ENTRE CITAS-CLIENTES
+ALTER TABLE citas
+ADD CONSTRAINT FK_CITAS_CLIENTES
+FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente)
+ON UPDATE CASCADE
+ON DELETE CASCADE
+GO
+
+-- CREACION DE LA RELACIÓN ENTRE INGRESOS-CLIENTES
+ALTER TABLE ingresos
+ADD CONSTRAINT FK_INGRESOS_CLIENTES
+FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente)
+ON UPDATE CASCADE
+ON DELETE CASCADE
+GO
+
+-- Consultas
+select * from clientes;
+select * from citas;
+select * from ingresos;
