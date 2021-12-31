@@ -1,0 +1,318 @@
+-- CREACIÓN DE LA BASE DE DATOS CON NOMBRE "estetica"
+
+-- Verificación de Existencia y Creación de la Base de Datos
+
+-- USAR BASE DE DATOS MASTER para trabajar
+USE master
+GO
+
+-- Verificación de la existencia
+IF DB_ID('estetica') IS NOT NULL
+BEGIN
+	USE MASTER
+	DROP DATABASE estetica
+END
+GO
+
+-- Creación de la Base de Datos (Archivo Principal, Secundario y de Log)
+CREATE DATABASE estetica
+ON PRIMARY
+(NAME = 'estetica.MDF',
+FILENAME = 'C:\Program Files\Microsoft SQL Server\MSSQL11.MSSQLSERVER\MSSQL\DATA\estetica.MDF',
+SIZE = 10MB,
+MAXSIZE = UNLIMITED,
+FILEGROWTH = 20%),
+
+(NAME = 'estetica.NDF',
+FILENAME = 'C:\Program Files\Microsoft SQL Server\MSSQL11.MSSQLSERVER\MSSQL\DATA\estetica.NDF',
+SIZE = 15MB,
+MAXSIZE = UNLIMITED,
+FILEGROWTH = 10%)
+
+LOG ON
+(NAME = 'estetica.LDF',
+FILENAME = 'C:\Program Files\Microsoft SQL Server\MSSQL11.MSSQLSERVER\MSSQL\DATA\estetica.LDF',
+SIZE = 5MB,
+MAXSIZE = UNLIMITED,
+FILEGROWTH = 5%)
+GO
+
+-- Uso de la base de datos para crear tablas
+USE estetica
+GO
+
+-- Creación de las TABLAS
+
+--CREAR TABLA CLIENTES
+CREATE TABLE clientes(
+id_cliente INT NOT NULL PRIMARY KEY IDENTITY(01,1),
+nombres NVARCHAR(MAX) NOT NULL,
+apellidos NVARCHAR(MAX) NOT NULL,
+direccion NVARCHAR(MAX) NOT NULL,
+telefono NVARCHAR(MAX) NOT NULL,
+estado NVARCHAR(MAX) NOT NULL DEFAULT('1')
+)
+
+--CREAR TABLA CITAS
+CREATE TABLE citas(
+id_cita INT NOT NULL PRIMARY KEY IDENTITY(01,1),
+fecha NVARCHAR(MAX) NOT NULL,
+hora NVARCHAR(MAX) NOT NULL,
+motivo NVARCHAR(MAX) NOT NULL,
+estado NVARCHAR(MAX) NOT NULL,
+id_cliente INT NOT NULL
+)
+
+-- CREAR TABLA INGRESOS
+CREATE TABLE ingresos(
+id_ingreso INT NOT NULL PRIMARY KEY IDENTITY(01,1),
+servicio NVARCHAR(MAX) NOT NULL,
+costo NVARCHAR(MAX) NOT NULL,
+estado NVARCHAR(MAX) NOT NULL,
+id_cliente INT NOT NULL
+)
+GO
+
+-- RELACION ENTRE LAS TABLAS
+
+/*
+Cuando una relación da problemas o errores al ACTUALIZAR o BORRAR
+Se deben poner las siguientes reglas:
+ON UPDATE CASCADE
+ON DELETE CASCADE
+
+De esta forma:
+ON UPDATE NO ACTION
+ON DELETE NO ACTION
+*/
+
+-- CREACION DE LA RELACIÓN ENTRE CITAS-CLIENTES
+ALTER TABLE citas
+ADD CONSTRAINT FK_CITAS_CLIENTES
+FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente)
+ON UPDATE CASCADE
+ON DELETE CASCADE
+GO
+
+-- CREACION DE LA RELACIÓN ENTRE INGRESOS-CLIENTES
+ALTER TABLE ingresos
+ADD CONSTRAINT FK_INGRESOS_CLIENTES
+FOREIGN KEY (id_cliente) REFERENCES clientes(id_cliente)
+ON UPDATE CASCADE
+ON DELETE CASCADE
+GO
+
+-- CREACIÓN DE UNA TABLA NUEVA SIN RELACIONAR PARA MODIFICAR TODO LO NECESARIO
+
+-- La tabla contiene campos de diversos tipos de dato.
+-- No tienen un objetivo especifico los campos. 
+-- Son solo para aplicar algunas acciones de borrado, modificación, etc.
+-- La tabla será eliminada después de aplicarle todas las acciones necesarias.
+
+-- CREAR NUEVA TABLA CON DIVERSOS TIPOS DE DATOS Y REGLAS
+-- La tabla contiene campos especificados como que pueden ser NO nulos y otros que SÍ pueden ser nulos.
+-- Se especifica una IDENTIDAD para que la llave primaria se llene sola con un valor que va desde el 1 y se incrementa en 1.
+-- En algunos tipos de dato VARCHAR se especifica en parentesis su tamaño o capacidad de caracteres.
+-- El campo de correo es indicado como que es ÚNICO, es decir, que no puede haber 2 correos iguales en la tabla.
+-- El campo de telefono se indica como que puede ser nulo, pero si no se inserta un valor, con DEFAULT se le indica que se llene
+-- con el valor que esta dentro de sus parentesis.
+
+CREATE TABLE tabla_extra(
+llavePrimaria smallint NOT NULL PRIMARY KEY identity(1,1),
+nombre varchar(60) NOT NULL,
+edad tinyint NOT NULL,
+fecha_nacimiento date NOT NULL,
+fecha_duracion smalldatetime NOT NULL,
+correo varchar(60) NOT NULL unique,
+ubicacion varchar(480) NULL,
+velocidad_max real NULL,
+tamano char(10) NOT NULL,
+telefono NVARCHAR(MAX) NULL DEFAULT('000-000-0000')
+)
+GO
+
+-- Cambiar nombre de la tabla "tabla_extra" por "tabla_borrar"
+EXEC sp_rename 'tabla_extra', 'tabla_borrar'
+GO
+
+-- AGREGAR CAMPO "estatura" A LA TABLA "tabla_borrar"
+ALTER TABLE tabla_borrar
+ADD estatura real null
+GO
+
+-- BORRAR CAMPO "estatura" DE LA TABLA "tabla_borrar"
+ALTER TABLE tabla_borrar
+DROP Column estatura
+GO
+
+-- CAMBIAR NOMBRE DE ATRIBUTO "velocidad_max" por "velocidad_maxima"
+EXEC sp_rename 'tabla_borrar.velocidad_max', 'velocidad_maxima', 'column';
+GO
+
+-- Eliminar tabla "tabla_borrar" de la base de datos
+DROP TABLE tabla_borrar
+GO
+
+-- Cambio del nombre de la base de DATOS "estetica" por "estetica2"
+ALTER DATABASE estetica 
+Modify name = estetica2
+GO
+
+-- Cambio del nombre de la base de DATOS nuevamente pero ahora de "estetica2" por "estetica" PARA NO AFECTAR el demás código.
+ALTER DATABASE estetica2 
+Modify name = estetica
+GO
+
+-- Uso nuevamente de la base de datos pero renombrada
+use estetica
+
+-- Separar base de datos
+use master
+Go
+SP_DETACH_DB @DBNAME = 'estetica'
+GO
+
+-- Adjuntar base de datos
+USE master
+GO
+CREATE DATABASE estetica
+ON (FILENAME = 'C:\Program Files\Microsoft SQL Server\MSSQL11.MSSQLSERVER\MSSQL\DATA\estetica.MDF'),
+(FILENAME = 'C:\Program Files\Microsoft SQL Server\MSSQL11.MSSQLSERVER\MSSQL\DATA\estetica.NDF'),
+(FILENAME = 'C:\Program Files\Microsoft SQL Server\MSSQL11.MSSQLSERVER\MSSQL\DATA\estetica.LDF')
+FOR ATTACH;
+GO
+
+-- Mostrar CADA UNA DE LAS Tablas
+use estetica
+go
+select name as [NOMBRE DE LA TABLA] from sysobjects where type='U'
+GO
+
+
+-- Mostrar todas las bases de datos Menos las del SISTEM
+SELECT name FROM master.dbo.sysdatabases WHERE name NOT IN ('master','model','msdb','tempdb')
+GO
+
+-- Eliminar la Base de Datos con el nombre "estetica"
+USE master
+DROP DATABASE estetica
+GO
+
+------------------------------------------------------- CREACIÓN DE LAS CONSULTAS DE CADA TIPO ----------------------------------------------------
+
+
+-- INSERTAR DATOS (SOLO UN REGISTRO)
+-- SE PONEN LAS INSTRUCCIONES, SE INDICA A QUE TABLA SE VA INSERTAR, DENTRO DE LOS PARENTESIS SE PONEN LOS CAMPOS QUE SE VAN A LLENAR
+-- SE PONE "VALUES" Y DENTRO DE SUS PARENTESIS SE ESCRIBE SEPARADO POR COMAS LOS DATOS QUE SE VAN A INSERTAR EN CADA CAMPO, TOMANDO
+-- EN CUENTA EL ORDEN EN QUE SE ESCRIBIERON LOS CAMPOS Y TAMBIÉN SU TIPO DE DATO, SI LLEVA COMILLAS O NO LLEVA.
+INSERT INTO clientes(nombres, apellidos, direccion, telefono, estado) VALUES('juan','morales mora','calle allende','4291009090','1')
+GO
+
+-- INSERTAR DATOS (VARIOS REGISTROS A LA VEZ)
+-- SE PONEN LAS INSTRUCCIONES, SE INDICA A QUE TABLA SE VA INSERTAR, DENTRO DE LOS PARENTESIS SE PONEN LOS CAMPOS QUE SE VAN A LLENAR
+-- SE PONE "VALUES" Y DENTRO DE SUS PARENTESIS SE ESCRIBE SEPARADO POR COMAS LOS DATOS QUE SE VAN A INSERTAR EN CADA CAMPO, TOMANDO
+-- EN CUENTA EL ORDEN EN QUE SE ESCRIBIERON LOS CAMPOS Y TAMBIÉN SU TIPO DE DATO, SI LLEVA COMILLAS O NO LLEVA.
+-- DESPUÉS DE QUE SE ESCRIBEN LOS VALORES DEL PRIMER REGISTRO SE PONE UNA COMA FUERA DEL PARENTESIS PARA SEPARA EL PRIMER REGISTRO DEL
+-- SEGUNDO REGISTRO Y AHORA PARA EL SEGUNDO REGISTRO SOLO SE PONE DENTRO DE LOS PARENTESIS SIN LA PALABRA "VALUES" LOS VALORES QUE SE VAN
+-- A INSERTAR, SI SE NECESITAN MÁS REGISTROS SOLO SE DEBEN SEGUIR LOS MISMOS PASOS Y SEPARAR CADA REGISTRO CON UNA COMA, EXCEPTO EL ÚLTIMO
+-- REGISTRO, ESE YA NO LLEVA COMA FUERA DEL PARENTESIS.
+INSERT INTO clientes(nombres, apellidos, direccion, telefono, estado) 
+VALUES('roberto','casares','calle matamoros','1029384756','1'),
+('juana','hurtado','calle nicolas','1234567890','1'),
+('marta','perez','calle alubin','0987654321','1')
+GO
+
+
+-- CREAR CONSULTA DE UNIÓN
+-- PRIMERO SE DEBE HACER UNA COPIA DE LA TABLA QUE SE VA A UNIR, EN ESTE CASO ES CLIENTES, LA COPIA SERÍA CLIENTES2.
+-- SOLO SE COPIA Y PEGA EL CÓDIGO DE LA TABLA ORIGINAL Y SE LE CAMBIA EL NOMBRE A LA TABLA PONIENDO UN 2 AL FINAL.
+
+--CREAR TABLA CLIENTES2
+CREATE TABLE clientes2(
+id_cliente INT NOT NULL PRIMARY KEY IDENTITY(01,1),
+nombres NVARCHAR(MAX) NOT NULL,
+apellidos NVARCHAR(MAX) NOT NULL,
+direccion NVARCHAR(MAX) NOT NULL,
+telefono NVARCHAR(MAX) NOT NULL,
+estado NVARCHAR(MAX) NOT NULL DEFAULT('1')
+)
+GO
+
+-- CUANDO YA SE CREO LA TABLA DE COPIA QUE SE USARÁ PARA HACER LA UNIÓN HAY QUE INGRESARLE DATOS.
+-- TAMBIÉN SE COPIA Y PEGA LA CONSULTA DE INSERCIÓN DE DATOS ORIGINAL DE LA PRIMER TABLA Y SOLO SE LE CAMBIA EL NOMBRE DE LA TABLA
+-- POR LA CUAL SE VA INSERTAR AHORA.
+INSERT INTO clientes2(nombres, apellidos, direccion, telefono, estado) 
+VALUES('roberto','casares','calle matamoros','1029384756','1'),
+('juana','hurtado','calle nicolas','1234567890','1'),
+('marta','perez','calle alubin','0987654321','1')
+GO
+
+-- AHORA SI YA SE PUEDE CREAR LA CONSULTA DE UNIÓN. SE HACE ASÍ:
+-- EN EL PRIMER SELECT SE PONE LA TABLA ORIGINAL Y LAS CONDICIONES NECESARIAS
+-- DESPUÉS SE USA LA INSTRUCCIÓN "UNION ALL"
+-- POR ÚLTIMO SE PONE OTRO SELECT CON LA TABLA DE COPIA O TABLA 2 Y TAMBIÉN SI ES NECESARO CONDICIONES SE PONEN. 
+SELECT * FROM clientes WHERE id_cliente = 1 AND nombres = 'roberto'
+UNION ALL
+SELECT * FROM clientes2
+GO
+
+-- CONSULTA DE SELECCIÓN SENCILLA
+-- SE COMIENZA Y SE INDICA LA TABLA ASÍ COMO LA CONDICIÓN O CONDICIONES QUE SE DEBEN CUMPLIR PARA MOSTRAR LA INFORMACIÓN.
+SELECT * FROM clientes WHERE nombres = 'roberto'
+GO
+
+-- CONSULTA DE RESUMEN
+-- PRIMERO SE BUSCA UN CAMPO EN LA TABLA QUE SE REPITA (EN ESTE CASO ES "estado") Y SE PONE EN EL SELECT Y SE LE DA UN ALÍAS ("Estado")
+-- DESPUÉS SE USA LA CLAVE PRIMARIA PARA REALIZAR UN CONTEO (EN ESTE CASO "id_cliente") Y SE LE DA UN ALÍAS ("Veces que se repite")
+-- LUEGO SE LE DICE CON QUE TABLA SE ESTA TRABAJANDO EN ESTE CASO "clientes"
+-- A CONTINUACIÓN SE DEBE INDICAR POR QUE CAMPO SE VA A AGRUPAR, SE DEBERÁ USAR EL MISMO DEL SELECT (EN ESTE CASO "estado")
+-- Y PARA FINALIZAR SE APLICA LA CONDICIÓN CON HAVING SOBRE EL CAMPO QUE SE ESTA TRABAJANDO EN EL SELECT (EN ESTE CASO "estado" QUE DEBE SER IGUAL A 1).
+SELECT estado AS [Estado], COUNT(id_cliente) AS [Veces que se repite]
+FROM clientes
+GROUP BY estado
+HAVING estado = '1'
+GO
+
+-- CONSULTA DE REFERENCIAS CRUZADAS
+-- PRIMERO SE CREA UNA SUBCONSULTA LLAMADA "CONSULTAR" Y DENTRO DE ELLA SE HACE LA CONSULTA CON LA QUE SE VA A DECIR CON CUALES CAMPOS SE VA A TRABAJAR
+-- USANDO UN SELECT Y PONIENDO LOS CAMPOS NECESARIOS (CON 3 SON SUFICIENTES). UNO PARA FILAS, OTRO PARA COLUMNAS Y UN ÚLTIMO PARA CONTAR.
+-- EN ESTE CASO, EL "telefono" SE PONDRÁ COMO FILAS, LOS "nombres" COMO COLUMNAS Y CON EL "id_cliente" SE VA A REALIZAR UN CONTEO DE LOS DATOS.
+-- DESPUÉS SE LE VA A DECIR DE QUE TABLA SE VAN A USAR LOS CAMPOS EN ESTE CASO DE LA TABLA (clientes) Y LISTO, YA SE TIENE COMPLETA LA CONSULTA PARA TRABAJAR.
+-- LUEGO DE ESO ES NECESARIO HACER UNA SEGUNDA CONSULTA DE LA QUE CREAMOS ANTES LLAMADA "CONSULTAR". PARA DESPUÉS CREAR EL PIVOT QUE NOS AYUDA A ACOMODAR LOS CAMPOS,
+-- PRIMERO CON LA FUNCIÓN "COUNT" SE CUENTAN LAS VECES QUE SE REPITE EL DATO, CON "FOR" SE INDICA PARA QUE CAMPO (EN ESTE CASO PARA "nombres") Y SEGUIDO DE ESO SE INDICA
+-- CON "IN" EN CUALES VALORES DEBE CONTAR LA FUNCIÓN (COUNT), ESTOS VALORES SE DEBEN PONER MANUALMENTE, COMO EN ESTE CASO SE PUSO PARA LOS NOMBRES "juan, roberto y juana".
+-- ESTOS NOSOTROS LOS DEBEMOS PONER ASÍ, ENTRE CORCHETES, SIN COMILLAS SIMPLES, Y SEPARADOS POR COMAS, (SE PUEDEN PONER AÚN MÁS VALORES QUE SE NECESITEN COMO EN ESTE CASO OTRO NOMBRE).
+-- FINALMENTE SE PONE PTV SOLAMENTE PARA INDICAR QUE NUESTRA CONSULTA YA SE ACABO Y ESTA LISTA.
+WITH CONSULTAR AS
+(
+SELECT telefono, nombres, id_cliente
+FROM clientes
+)
+SELECT * FROM CONSULTAR
+PIVOT(COUNT(id_cliente) FOR nombres IN ([juan], [roberto], [juana])) PTV
+GO
+
+-- CONSULTA DE ELIMINACIÓN
+-- SE COMIENZA Y SE INDICA LA TABLA ASÍ COMO LA CONDICIÓN O CONDICIONES QUE SE DEBERÁN TOMAR EN CUENTA PARA BORRAR EL REGISTRO O REGISTROS NECESARIOS
+DELETE FROM clientes WHERE nombres = 'marta' AND id_cliente = '4'
+GO
+
+-- CONSULTA DE ACTUALIZACIÓN
+-- SE COMIENZA Y CON "SET" SE ESTABLECE EL CAMPO Y EL NUEVO VALOR QUE SE AGREGARÁ O POR EL CUAL VA A CAMBIAR. DESPUÉS SE PONE LA CONDICIÓN O CONDICIONES
+-- QUE SE DEBEN TOMAR EN CUENTA PARA APLICAR LA ACTUALIZACIÓN O CAMBIO DE VALOR PARA EL REGISTRO O LOS REGISTROS NECESARIOS. SE PUEDEN CAMBIAR MÁS DE UN
+-- VALOR EN "SET", SOLO ES NECESARIO SEPARAR CON COMAS AL FINAL QUE SE INDICA EL NUEVO VALOR. Y PONER NOMBRE DEL CAMPO QUE SE VA A CAMBIAR ASÍ COMO EL NUEVO
+-- VALOR QUE VA A TENER UNA VEZ QUE SE EJECUTE LA CONSULTA.
+UPDATE clientes SET estado = '0' WHERE estado = '1'
+GO
+
+-- CONSULTA DE INNER JOIN
+-- SE DEBEN BUSCAR DOS TABLAS RELACIONADAS ENTRE SÍ. (EN ESTE CASO CLIENTES Y CITAS)
+-- PRIMERO SE INDICA LA TABLA 1, EN ESTE CASO "clientes" Y SE SELECCIONA TODO LO QUE TENGA ESTA TABLA.
+-- LUEGO SE DICE CON "INNER JOIN" QUE SE VA UNIR CON LA TABLA 2 EN ESTE CASO ES "citas".
+-- CON "ON" SE PONE LA CONDICIÓN DE QUE SE UNIRÁ SIEMPRE Y CUANDO EL "id_cliente" DE LA TABLA "CLIENTES"
+-- COINCIDA (SEA PUES IGUAL) CON EL "id_cliente" DE LA TABLA "CITAS" (NOTESE QUE EN LA TABLA CITAS ESTE CAMPO ES FORANEO).
+-- SE ESCRIBE "clientes.id_cliente" PORQUE ES LA FORMA DE DECIR, QUE DE LA TABLA "CLIENTES" SE VA USAR EL CAMPO
+-- "id_cliente", DE LA MISMA FORMA PASA CON LA TABLA CITAS. 
+SELECT * FROM clientes INNER JOIN citas ON clientes.id_cliente = citas.id_cliente
+GO
+
